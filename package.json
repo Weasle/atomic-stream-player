@@ -1,0 +1,23 @@
+{
+  "name": "atomic-stream-player",
+  "version": "0.0.1",
+  "description": "Electron powered stand-alone version of a streaming music player",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Weasle/atomic-stream-player.git"
+  },
+  "keywords": [
+    "Electron",
+    "Google Music",
+    "Amazon Prime Music"
+  ],
+  "author": "Florian Sonnenburg",
+  "license": "MIT",
+  "devDependencies": {
+    "electron-prebuilt": "^1.1.1"
+  }
+}
