@@ -1,10 +1,12 @@
 const electron = require('electron');
+const lastFmService = require('lastFm/lastFmService');
 const path = require('path');
 const app = electron.app;
 const globalShortcut = electron.globalShortcut;
-// const ipcMain = electron.ipcMain;
+const ipcMain = electron.ipcMain;
 
 var BrowserWindow = electron.BrowserWindow;
+var $ = reqire('jquery');
 
 app.on('window-all-closed', function() {
   app.quit();
@@ -25,19 +27,23 @@ app.on('ready', function() {
 
     contents.on('dom-ready', () => {
         console.log('Google Music DOM ready');
-        contents.send('ampGpmDomReady');
+        contents.send('aspGpmDomReady');
         contents.insertCSS('#material-app-bar #material-one-right {visibility: hidden;}');
 
         globalShortcut.register('MediaPlayPause', function () {
-            contents.send('ampMediaKeyPressed', 'playPause')
+            contents.send('aspMediaKeyPressed', 'playPause')
         });
 
         globalShortcut.register('MediaNextTrack', function () {
-            contents.send('ampMediaKeyPressed', 'next')
+            contents.send('aspMediaKeyPressed', 'next')
         });
 
         globalShortcut.register('MediaPreviousTrack', function () {
-            contents.send('ampMediaKeyPressed', 'previous')
+            contents.send('aspMediaKeyPressed', 'previous')
         });
+    });
+
+    ipcMain.on('aspNowPlaying', (event, nowPlaying) => {
+        console.log(nowPlaying)
     });
 });

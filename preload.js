@@ -6,12 +6,25 @@ const keySelectorMap = {
     previous: '[data-id="rewind"]',
 };
 
-ipcRenderer.on('ampGpmDomReady', (event, arg) => {
-    $ = global.jQuery = require('./jquery-3.1.0.slim.min');
+ipcRenderer.on('aspGpmDomReady', (event, arg) => {
+    $ = global.jQuery = require('jquery');
+
+    var infoReporter = setInterval(function() {
+        var nowPlayingInfoContainer = $('.now-playing-info-content');
+        var artist = nowPlayingInfoContainer.find('[data-type="artist"]').text();
+        var album = nowPlayingInfoContainer.find('[data-type="album"]').text();
+        var song = nowPlayingInfoContainer.find('#currently-playing-title').text();
+        var albumArt = $('#playerBarArt').attr('src');
+        ipcRenderer.send('aspNowPlaying', {
+            'artists': artist,
+            'album': album,
+            'song': song,
+            'albumArt': albumArt
+        });
+    }, 1000);
 });
 
-ipcRenderer.on('ampMediaKeyPressed', (event, keyPressed) => {
-    console.log(keyPressed);
+ipcRenderer.on('aspMediaKeyPressed', (event, keyPressed) => {
     var selector = keySelectorMap[keyPressed];
     var button = $(selector);
     button.click();
