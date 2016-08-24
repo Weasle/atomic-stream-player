@@ -1,15 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-  <script>
-     var remote = require('electron').remote;
-     console.log(remote.getGlobal('sharedObj').prop1);
-
-     remote.getGlobal('sharedObj').prop1 = 125;
-
-     var ipcRenderer = require('electron').ipcRenderer;
-     ipcRenderer.send('show-prop1');
-  </script>
+      <title>test</title>
   </head>
   <body>
     <h1>Hello World!</h1>
