@@ -3,6 +3,7 @@ const path = require('path');
 const deferred = require('deferred');
 const request = require('request');
 const low = require('lowdb');
+const crypto = require('crypto');
 
 const app = electron.app;
 const globalShortcut = electron.globalShortcut;
@@ -19,12 +20,29 @@ var sessionUrl = 'http://ws.audioscrobbler.com/2.0/?method=auth.getsession&api_k
 var authUrl =  'http://www.last.fm/api/auth?api_key=' + lastFmApiKey + '&token=';
 
 const lastFmService = {
+    hasSession: false,
+    session: {},
     startSession: function () {
+        var dbKey = 'lastFmSession';
         var deferredResult = deferred();
-        if (db.has('lastFmSession').value()) {
-
+        if (db.has(dbKey).value()) {
+            lastFmService.hasSession = true;
+            lastFmService.session = db.get(dbKey).value();
+            deferredResult.resolve(lastFmService.session);
         } else {
-            lastFmService.startRemoteAuth(deferredResult);
+            lastFmService.startRemoteAuth(deferredResult).then(
+                function(session) {
+                    db.set(dbKey, session).value();
+                    lastFmService.hasSession = true;
+                    lastFmService.session = session;
+                    deferredResult.resolve(lastFmService.session);
+                },
+                function (errorResult) {
+                    lastFmService.hasSession = false;
+                    lastFmService.session = {};
+                    deferredResult.reject(errorResult);
+                }
+            );
         }
         return deferredResult.promise();
     },
@@ -32,25 +50,26 @@ const lastFmService = {
         request.get(tokenUrl, function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 var token = JSON.parse(body).token;
-                console.log('token: ' + token);
                 lastFmService.authorizeToken(token).then(
-                    function (sessionKey) {
-                        deferredResult.resolve(sessionKey);
+                    function (session) {
+                        deferredResult.resolve(session);
                     },
                     function (errorResult) {
-                        var errorMessage = 'Failed to get lastFm session token. ' + errorResult;
-                        console.log(errorMessage);
+                        var errorMessage = 'Failed to authorize LastFM session token.';
+                        console.log(errorMessage, errorResult);
                         deferredResult.reject(errorMessage);
                     }
                 );
             } else {
-                console.log(JSON.parse(response));
+                errorResult = JSON.parse(response);
+                console.log('Could not get access token from LastFM', errorResult);
+                deferredResult.reject(errorResult);
             }
         });
+        return deferredResult.promise();
     },
     authorizeToken: function (token) {
         var authResult = deferred();
-        console.log(token);
         let authWin = new BrowserWindow({
             // webPreferences: {
             //    preload: path.resolve(path.join(__dirname, 'preload.js'))
@@ -63,17 +82,12 @@ const lastFmService = {
         authWin.loadURL(authUrl + token);
         authWin.on('closed', function () {
             console.log('AuthWindow closed');
-            var data = "api_key" + lastFmApiKey + "methodauth.getsessiontoken" + token + lastFmSharedSecret;
-            var crypto = require('crypto');
-            var signature = crypto.createHash('md5').update(data).digest('hex');
-            var getSessionUrl = sessionUrl + '&token=' + token + '&api_sig=' + signature;
             var sessionKey;
-
+            var getSessionUrl = sessionUrl + '&token=' + token + '&api_sig=' + lastFmService.getRequestSignature("auth.getsession", token);
             request.get(getSessionUrl, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
-                    sessionKey = JSON.parse(body);
-                    authResult.resolve(sessionKey);
-                    console.log('LastFM Auth Success', sessionKey);
+                    session = JSON.parse(body);
+                    authResult.resolve(session);
                 } else {
                     console.log('LastFM Auth Error');
                     errorResult = JSON.parse(body);
@@ -83,6 +97,11 @@ const lastFmService = {
         })
         return authResult.promise();
     },
+    getRequestSignature: function (method, token) {
+        var data = "api_key" + lastFmApiKey + "method" + method + "token" + token + lastFmSharedSecret;
+        var signature = crypto.createHash('md5').update(data).digest('hex');
+        return signature;
+    },
     nowPlaying: function () {
         return lastFmService.getToken().then();
     },
@@ -91,14 +110,9 @@ const lastFmService = {
     }
 };
 
-lastFmService.startSession().then(
-    function () {
-
-    },
-    function () {
-
-    }
-);
+lastFmService.startSession().then(function (session) {
+    console.log('LastFM session', session);
+});
 
 app.on('window-all-closed', function() {
   app.quit();
