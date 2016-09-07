@@ -109,7 +109,6 @@ const lastFmService = {
             data += key + params[key];
         });
         data += lastFmSharedSecret;
-        console.log('Signature data: ' + data);
         var signature = crypto.createHash('md5').update(data).digest('hex');
         return signature;
     },
@@ -117,10 +116,6 @@ const lastFmService = {
         var deferredResult = deferred();
         lastFmService.startSession().then(
             function (session) {
-                var artist = encodeURIComponent(playRecord.artist);
-                var album = encodeURIComponent(playRecord.album);
-                var track = encodeURIComponent(playRecord.song);
-                var sessionKey = session.key;
                 var postParams = {
                     'method': 'track.updatenowplaying',
                     'artist': playRecord.artist,
@@ -155,8 +150,44 @@ const lastFmService = {
         );
         return deferredResult.promise();
     },
-    scrobble: function () {
+    scrobble: function (playRecord, startedPlaying) {
+        var deferredResult = deferred();
+        lastFmService.startSession().then(
+            function (session) {
+                var postParams = {
+                    'method': 'track.scrobble',
+                    'timestamp': startedPlaying,
+                    'artist': playRecord.artist,
+                    'album': playRecord.album,
+                    'track': playRecord.song,
+                    'duration': playRecord.duration,
+                    'sk': session.key
+                };
+                var signature = lastFmService.getRequestSignature(postParams);
+                postParams['api_sig'] = signature;
+                postParams['format'] = 'json';
+                request.post(
+                    {
+                        url:'http://ws.audioscrobbler.com/2.0/',
+                        form: postParams
+                    }, function(error, httpResponse, body){
+                        if (!error) {
+                            var parsedBody = JSON.parse(body);
+                            if (httpResponse.statusCode == 200) {
+                                deferredResult.resolve(parsedBody);
+                            } else {
+                                deferredResult.reject(parsedBody);
+                            }
+                        }
 
+                    }
+                );
+            },
+            function (errorResult) {
+                console.log('Could not scrobble track. LastFMSession not created.');
+            }
+        );
+        return deferredResult.promise();
     }
 };
 
@@ -202,27 +233,19 @@ app.on('ready', function() {
     });
 
     ipcMain.on('aspNowPlaying', (event, nowPlaying) => {
+        var startedPlaying = Math.floor((new Date()).getTime() / 1000);
         lastFmService.nowPlaying(nowPlaying).then(function (result) {
-            console.log(result);
+            console.log('NowPlaying updated successfully.');
         });
-        var duration = nowPlaying.duration;
-        var splitDuration = duration.split(':');
-        var minutes = 0;
-        var hours = 0;
+
         var timeout = 4 * 60;
-        var seconds = splitDuration.pop();
-        if (splitDuration.length > 0) {
-            minutes = splitDuration.pop();
-            if (splitDuration.length > 0) {
-                hours = splitDuration.pop();
-            }
-        }
-        var totalSeconds = hours * 60 * 60 + minutes * 60 + seconds;
-        if (totalSeconds < 4 * 60) {
-            timeout = (totalSeconds / 2);
+        if (nowPlaying.duration < 8 * 60) {
+            timeout = Math.ceil(nowPlaying.duration / 2);
         }
         setTimeout(function () {
-            lastFmService.scrobble(nowPlaying);
+            lastFmService.scrobble(nowPlaying, startedPlaying).then(function (result) {
+                console.log(result);
+            });
         }, timeout * 1000);
 
     });

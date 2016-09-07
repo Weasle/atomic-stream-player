@@ -1,6 +1,6 @@
 {
   "name": "atomic-stream-player",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Electron powered stand-alone version of a streaming music player",
   "main": "main.js",
   "scripts": {
