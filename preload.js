@@ -23,33 +23,31 @@ function getDurationInSeconds(durationString) {
 }
 
 ipcRenderer.on('aspGpmDomReady', (event, arg) => {
-    var isPlaying = false;
-    var playRecord = {
-        'artists': undefined,
-        'album': undefined,
-        'song': undefined,
-        'albumArt': undefined
-    };
+    var playRecord = {};
 
     $ = global.jQuery = require('jquery');
 
     var infoReporter = setInterval(function() {
         var duration = $('#time_container_duration').text();
         var nowPlayingInfoContainer = $('.now-playing-info-content');
+        var isPlaying = $('#player-bar-play-pause').hasClass('playing');
+
         var nowPlaying = {
             'artist': nowPlayingInfoContainer.find('[data-type="artist"]').text(),
             'album': nowPlayingInfoContainer.find('[data-type="album"]').text(),
             'song': nowPlayingInfoContainer.find('#currently-playing-title').text(),
             'duration': getDurationInSeconds(duration),
-            'albumArt': $('#playerBarArt').attr('src')
+            'albumArt': $('#playerBarArt').attr('src'),
+            'isPlaying': isPlaying
         };
-        if (nowPlaying.artist.length > 0) {
-            isPlaying = true;
-        }
 
-        if (isPlaying && !_.isEqual(playRecord, nowPlaying)) {
+        if (!_.isEqual(playRecord, nowPlaying)) {
+            var currentTime = $('#time_container_current').text();
             playRecord = nowPlaying;
-            ipcRenderer.send('aspNowPlaying', playRecord);
+            ipcRenderer.send('aspNowPlaying', {
+                'playRecord': playRecord,
+                'currentTime': getDurationInSeconds(currentTime)
+            });
         }
 
     }, 1000);

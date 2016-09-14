@@ -18,6 +18,7 @@ const lastFmApiKey = '1f2f1adf1828cc2b64eaffd052d7495a';
 const lastFmSharedSecret = 'e04ba9677cbf7e8fe7c753dd6ca406fd';
 var tokenUrl = 'http://ws.audioscrobbler.com/2.0/?method=auth.gettoken&api_key=' + lastFmApiKey + '&format=json';
 var authUrl =  'http://www.last.fm/api/auth?api_key=' + lastFmApiKey + '&token=';
+var timeoutId;
 
 const lastFmService = {
     session: undefined,
@@ -232,21 +233,30 @@ app.on('ready', function() {
         });
     });
 
-    ipcMain.on('aspNowPlaying', (event, nowPlaying) => {
-        var startedPlaying = Math.floor((new Date()).getTime() / 1000);
-        lastFmService.nowPlaying(nowPlaying).then(function (result) {
-            console.log('NowPlaying updated successfully.');
-        });
-
-        var timeout = 4 * 60;
-        if (nowPlaying.duration < 8 * 60) {
-            timeout = Math.ceil(nowPlaying.duration / 2);
+    ipcMain.on('aspNowPlaying', (event, payload) => {
+        console.log('Reveived nowPlaying event', payload);
+        if (timeoutId) {
+            console.log(timeoutId);
+            clearTimeout(timeoutId);
         }
-        setTimeout(function () {
-            lastFmService.scrobble(nowPlaying, startedPlaying).then(function (result) {
-                console.log(result);
+        var nowPlaying = payload.playRecord;
+        var currentTime = payload.currentTime;
+        if (nowPlaying.isPlaying) {
+            lastFmService.nowPlaying(nowPlaying).then(function (result) {
+                console.log('NowPlaying updated successfully.');
             });
-        }, timeout * 1000);
 
+            var startedPlaying = Math.floor((new Date()).getTime() / 1000);
+            var timeout = 4 * 60;
+            if (nowPlaying.duration < 8 * 60) {
+                timeout = Math.ceil(nowPlaying.duration / 2);
+            }
+
+            timeoutId = setTimeout(function () {
+                lastFmService.scrobble(nowPlaying, startedPlaying).then(function (result) {
+                    console.log(result);
+                });
+            }, timeout * 1000);
+        }
     });
 });
