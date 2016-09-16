@@ -189,6 +189,42 @@ const lastFmService = {
             }
         );
         return deferredResult.promise();
+    },
+    loveTrack: function (playRecord, isLoved) {
+        var method = isLoved ? 'track.love' : 'track.unlove';
+        var deferredResult = deferred();
+        lastFmService.startSession().then(
+            function (session) {
+                var postParams = {
+                    'method': method,
+                    'track': playRecord.song,
+                    'artist': playRecord.artist,
+                    'sk': session.key
+                };
+                var signature = lastFmService.getRequestSignature(postParams);
+                postParams['api_sig'] = signature;
+                postParams['format'] = 'json';
+                request.post(
+                    {
+                        url:'http://ws.audioscrobbler.com/2.0/',
+                        form: postParams
+                    }, function(error, httpResponse, body){
+                        if (!error) {
+                            var parsedBody = JSON.parse(body);
+                            if (httpResponse.statusCode == 200) {
+                                deferredResult.resolve(parsedBody);
+                            } else {
+                                deferredResult.reject(parsedBody);
+                            }
+                        }
+                    }
+                );
+            },
+            function (errorResult) {
+                console.log('Could not love track. LastFMSession not created.');
+            }
+        );
+        return deferredResult.promise();
     }
 };
 
@@ -236,7 +272,6 @@ app.on('ready', function() {
     ipcMain.on('aspNowPlaying', (event, payload) => {
         console.log('Reveived nowPlaying event', payload);
         if (timeoutId) {
-            console.log(timeoutId);
             clearTimeout(timeoutId);
         }
         var nowPlaying = payload.playRecord;
@@ -258,5 +293,11 @@ app.on('ready', function() {
                 });
             }, timeout * 1000);
         }
+    });
+
+    ipcMain.on('rateSong', (event, payload) => {
+        lastFmService.loveTrack(payload.nowPlaying, payload.isLoved).then(function (result) {
+            console.log(payload, result, 'Track un/loved successfully.');
+        });
     });
 });

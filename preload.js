@@ -24,6 +24,7 @@ function getDurationInSeconds(durationString) {
 
 ipcRenderer.on('aspGpmDomReady', (event, arg) => {
     var playRecord = {};
+    var rating;
 
     $ = global.jQuery = require('jquery');
 
@@ -31,6 +32,7 @@ ipcRenderer.on('aspGpmDomReady', (event, arg) => {
         var duration = $('#time_container_duration').text();
         var nowPlayingInfoContainer = $('.now-playing-info-content');
         var isPlaying = $('#player-bar-play-pause').hasClass('playing');
+        var songRating = $('.currently-playing [data-col="rating"]').attr('data-rating');
 
         var nowPlaying = {
             'artist': nowPlayingInfoContainer.find('[data-type="artist"]').text(),
@@ -41,12 +43,25 @@ ipcRenderer.on('aspGpmDomReady', (event, arg) => {
             'isPlaying': isPlaying
         };
 
+        // track play changed, or initial setting of playRecord
         if (!_.isEqual(playRecord, nowPlaying)) {
             var currentTime = $('#time_container_current').text();
             playRecord = nowPlaying;
             ipcRenderer.send('aspNowPlaying', {
                 'playRecord': playRecord,
                 'currentTime': getDurationInSeconds(currentTime)
+            });
+            if (playRecord.song) {
+                rating = songRating;
+            }
+        }
+
+        if (typeof rating !== 'undefined' && rating !== songRating) {
+            var isLoved = songRating == 5;
+            rating = songRating;
+            ipcRenderer.send('rateSong', {
+                'nowPlaying': nowPlaying,
+                'isLoved': isLoved
             });
         }
 
