@@ -1,0 +1,15 @@
+{
+  "name": "atomic-stream-player",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Electron powered stand-alone version of a streaming music player",
+  "author": "Florian Sonnenburg",
+  "main": "main.js",
+  "dependencies": {
+    "configstore": "^2.1.0",
+    "deferred": "^0.7.5",
+    "jquery": "^3.1.0",
+    "lodash": "^4.15.0",
+    "request": "^2.74.0"
+  }
+}

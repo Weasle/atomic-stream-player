@@ -1,0 +1,17 @@
+<div style="
+    position: absolute;
+    top: 20px;
+    width: 300px;
+    z-index: 100;
+    background: #ff2525;
+    padding: 10px 20px;
+    right: 0;
+    border-radius: 10px 0 0 10px;
+    border: 2px solid white;
+    border-right: 0;
+    color: white;
+    font-size: 20px;
+    font-weight: lighter;
+    transition: right 1s;
+    transition-timing-function: ease;
+">Content</div>

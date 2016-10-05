@@ -2,7 +2,7 @@ const electron = require('electron');
 const path = require('path');
 const deferred = require('deferred');
 const request = require('request');
-const low = require('lowdb');
+const Configstore = require('configstore');
 const crypto = require('crypto');
 const _ = require('lodash');
 
@@ -12,7 +12,8 @@ const ipcMain = electron.ipcMain;
 
 var BrowserWindow = electron.BrowserWindow;
 
-const db = low('db');
+const pkg = require('./package.json');
+const conf = new Configstore(pkg.name, {foo: 'bar'});
 
 const lastFmApiKey = '1f2f1adf1828cc2b64eaffd052d7495a';
 const lastFmSharedSecret = 'e04ba9677cbf7e8fe7c753dd6ca406fd';
@@ -25,13 +26,13 @@ const lastFmService = {
     startSession: function () {
         var dbKey = 'lastFmSession';
         var deferredResult = deferred();
-        if (db.has(dbKey).value()) {
-            lastFmService.session = db.get(dbKey).value();
+        if (conf.has(dbKey)) {
+            lastFmService.session = conf.get(dbKey);
             deferredResult.resolve(lastFmService.session);
         } else {
             lastFmService.startRemoteAuth(deferredResult).then(
                 function(session) {
-                    db.set(dbKey, session).value();
+                    conf.set(dbKey, session);
                     lastFmService.session = session;
                     deferredResult.resolve(lastFmService.session);
                 },

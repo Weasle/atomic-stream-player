@@ -2,9 +2,10 @@
   "name": "atomic-stream-player",
   "version": "0.1.0",
   "description": "Electron powered stand-alone version of a streaming music player",
-  "main": "main.js",
   "scripts": {
-    "start": "electron main.js"
+    "start": "electron app/main.js",
+    "pack": "build --dir",
+    "dist": "build"
   },
   "repository": {
     "type": "git",
@@ -17,12 +18,17 @@
   ],
   "author": "Florian Sonnenburg",
   "license": "MIT",
+  "build": {
+    "appId": "de.weasle.asp",
+    "mac": {
+      "category": "your.app.category.type"
+    },
+    "win": {
+      "iconUrl": "(windows-only) https link to icon"
+    }
+  },
   "devDependencies": {
-    "deferred": "^0.7.5",
-    "electron-prebuilt": "^1.1.1",
-    "jquery": "^3.1.0",
-    "lodash": "^4.15.0",
-    "lowdb": "^0.13.1",
-    "request": "^2.74.0"
+    "electron-builder": "^7.10.2",
+    "electron-prebuilt": "^1.1.1"
   }
 }
