@@ -250,16 +250,6 @@ app.on('ready', function() {
     let template = [{
         label: 'Edit',
         submenu: [{
-            label: 'Undo',
-            accelerator: 'CmdOrCtrl+Z',
-            role: 'undo'
-        }, {
-            label: 'Redo',
-            accelerator: 'Shift+CmdOrCtrl+Z',
-            role: 'redo'
-        }, {
-            type: 'separator'
-        }, {
             label: 'Cut',
             accelerator: 'CmdOrCtrl+X',
             role: 'cut'
@@ -275,18 +265,17 @@ app.on('ready', function() {
             label: 'Select All',
             accelerator: 'CmdOrCtrl+A',
             role: 'selectall'
+        },{
+            type: 'separator'
+        },
+        {
+            label: 'Quit',
+            accelerator: 'CmdOrCtrl+Q',
+            role: 'quit'
         }]
     }, {
         label: 'View',
         submenu: [{
-            label: 'Back',
-            accelerator: 'CmdOrCtrl+Backspace',
-            click: function() {
-                if (contents.canGoBack()) {
-                    contents.goBack()
-                }
-            }
-        }, {
             label: 'Reload',
             accelerator: 'CmdOrCtrl+R',
             click: function(item, focusedWindow) {
@@ -329,6 +318,25 @@ app.on('ready', function() {
             click: function(item, focusedWindow) {
                 if (focusedWindow) {
                     focusedWindow.toggleDevTools()
+                }
+            }
+        }]
+    }, {
+        label: 'Navigate',
+        submenu: [{
+            label: 'Back',
+            accelerator: 'Alt+Left',
+            click: function() {
+                if (contents.canGoBack()) {
+                    contents.goBack()
+                }
+            }
+        }, {
+            label: 'Forward',
+            accelerator: 'Alt+Right',
+            click: function() {
+                if (contents.canGoForward()) {
+                    contents.goForward()
                 }
             }
         }]
@@ -376,7 +384,7 @@ app.on('ready', function() {
         globalShortcut.register('MediaPreviousTrack', function() {
             contents.send('aspMediaKeyPressed', 'previous');
         });
-    }); 
+    });
 
     ipcMain.on('aspNowPlaying', (event, payload) => {
         console.log('Reveived nowPlaying event', payload);
